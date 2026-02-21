@@ -6,6 +6,7 @@ use App\Models\Chirp;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
+
 class ChirpPolicy
 {
     /**
