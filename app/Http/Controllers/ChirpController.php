@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Chirp;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ChirpController extends Controller
 {
@@ -12,23 +14,10 @@ class ChirpController extends Controller
     public function index()
     {
 
-        $chirps = [
-            [
-                'author' => 'Jane Doe',
-                'message' => 'Just deployed my first Laravel app! 🚀',
-                'time' => '5 minutes ago'
-            ],
-            [
-                'author' => 'John Smith',
-                'message' => 'Laravel makes web development fun again!',
-                'time' => '1 hour ago'
-            ],
-            [
-                'author' => 'Alice Johnson',
-                'message' => 'Working on something cool with Chirper...',
-                'time' => '3 hours ago'
-            ]
-        ];
+        $chirps = Chirp::with('user')
+            ->latest()
+            ->take(50)
+            ->get();
  
         return view('home', ['chirps' => $chirps]);
         
@@ -40,6 +29,7 @@ class ChirpController extends Controller
     public function create()
     {
         //
+        
     }
 
     /**
@@ -47,7 +37,27 @@ class ChirpController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'message' => [
+            'required',
+            'string',
+            'max:255',
+            //Rule::unique('chirps')->where(function ($query) use ($user) {
+            //    return $query->where('user_id', $user->id);
+            //})
+            ]]
+            ,
+            [
+            'message.required' => "Please write something to chirp!",
+            'message.max' => 'Chirp must be 255 character or less.',
+        ]);
+
+        Chirp::create([
+            "message" => $validated["message"],
+            "user_id" => null
+        ]);
+
+        return redirect("/")->with("success","Chirp created!");
     }
 
     /**
@@ -61,24 +71,39 @@ class ChirpController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Chirp $chirp)
     {
         //
+        return view('chirps.edit',["chirp"=>$chirp]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Chirp $chirp)
     {
-        //
+        
+        // Validate
+        $validated = $request->validate([
+            'message' => 'required|string|max:255',
+        ]);
+
+        $chirp->update($validated);
+ 
+        return redirect('/')->with('success', 'Chirp updated!');
+
+
+        
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Chirp $chirp)
     {
         //
+        $chirp->delete();
+        return redirect('/')->with('success', 'Chirp deleted!');
+
     }
 }
